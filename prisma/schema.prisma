@@ -1,0 +1,155 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ── Lot (Lote) ──────────────────────────────────────────────────────
+model Lot {
+  id                Int      @id @default(autoincrement())
+  code              String   @unique                       // URL-safe key, e.g. "nicolas-garcia"
+  displayName       String   @map("display_name")          // Human-readable, e.g. "Nicolas Garcia"
+  farmGroup         String?  @map("farm_group")            // Grouping label, e.g. "ARAZAM"
+  variety           String?                                 // Sugarcane variety
+  areaHa            Float    @map("area_ha")
+  lifecycleStatus   String   @default("soca") @map("lifecycle_status") // planta | soca | barbecho
+  harvestCycleCount Int      @default(0) @map("harvest_cycle_count")   // Number of cosechas
+  soilReferenceZone String?  @map("soil_reference_zone")   // Company soil zone used as proxy
+  notes             String?
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  plans              FertilizationPlan[]
+  applicationRecords ApplicationRecord[]
+  yieldResults       YieldResult[]
+
+  @@map("lots")
+}
+
+// ── Formula ─────────────────────────────────────────────────────────
+model Formula {
+  id             Int     @id @default(autoincrement())
+  name           String  @unique                           // e.g. "13-21.3-18-2.4(S)"
+  nPct           Float   @map("n_pct")
+  p2o5Pct        Float   @map("p2o5_pct")
+  k2oPct         Float   @map("k2o_pct")
+  sPct           Float   @default(0) @map("s_pct")
+  mgoPct         Float   @default(0) @map("mgo_pct")
+  caoPct         Float   @default(0) @map("cao_pct")
+  kgPerSack      Float   @default(50) @map("kg_per_sack")
+  nitrogenSource String? @map("nitrogen_source")
+  isActive       Boolean @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  planApplications PlanApplication[]
+  applicationRecords ApplicationRecord[]
+
+  @@map("formulas")
+}
+
+// ── Harvest Season (Zafra) ──────────────────────────────────────────
+model HarvestSeason {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique                              // e.g. "2025-2026"
+  startDate DateTime? @map("start_date")
+  endDate   DateTime? @map("end_date")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  plans        FertilizationPlan[]
+  yieldResults YieldResult[]
+
+  @@map("harvest_seasons")
+}
+
+// ── Fertilization Plan (Plan de Fertilizacion) ──────────────────────
+model FertilizationPlan {
+  id              Int     @id @default(autoincrement())
+  lotId           Int     @map("lot_id")
+  harvestSeasonId Int     @map("harvest_season_id")
+  targetTch       Float   @map("target_tch")
+  nRatePerTch     Float   @default(1.2) @map("n_rate_per_tch")
+  nRequiredKg     Float?  @map("n_required_kg")            // Computed: targetTch * nRatePerTch * areaHa
+  status          String  @default("borrador")             // borrador | aprobado | en_progreso | completado
+  notes           String?
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  lot             Lot             @relation(fields: [lotId], references: [id])
+  harvestSeason   HarvestSeason   @relation(fields: [harvestSeasonId], references: [id])
+  applications    PlanApplication[]
+
+  @@unique([lotId, harvestSeasonId])
+  @@map("fertilization_plans")
+}
+
+// ── Plan Application (Aplicacion Planificada) ───────────────────────
+model PlanApplication {
+  id                Int      @id @default(autoincrement())
+  planId            Int      @map("plan_id")
+  applicationNumber Int      @map("application_number")    // 1 = primera, 2 = segunda
+  formulaId         Int      @map("formula_id")
+  plannedDate       DateTime? @map("planned_date")
+  sacksPerHa        Float    @map("sacks_per_ha")
+  totalSacks        Float    @map("total_sacks")           // Computed: sacksPerHa * lot.areaHa
+  doseKgPerHa       Float?   @map("dose_kg_per_ha")        // Computed: sacksPerHa * formula.kgPerSack
+
+  // Computed nutrient contributions (kg total)
+  nContributedKg    Float?   @map("n_contributed_kg")
+  p2o5ContributedKg Float?   @map("p2o5_contributed_kg")
+  k2oContributedKg  Float?   @map("k2o_contributed_kg")
+  sContributedKg    Float?   @map("s_contributed_kg")
+  mgoContributedKg  Float?   @map("mgo_contributed_kg")
+  caoContributedKg  Float?   @map("cao_contributed_kg")
+
+  notes             String?
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  plan              FertilizationPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  formula           Formula           @relation(fields: [formulaId], references: [id])
+  applicationRecords ApplicationRecord[]
+
+  @@unique([planId, applicationNumber])
+  @@map("plan_applications")
+}
+
+// ── Application Record (Registro de Aplicacion Real) ────────────────
+model ApplicationRecord {
+  id                 Int       @id @default(autoincrement())
+  planApplicationId  Int?      @map("plan_application_id") // Nullable: unplanned applications allowed
+  lotId              Int       @map("lot_id")
+  formulaId          Int       @map("formula_id")
+  actualDate         DateTime  @map("actual_date")
+  actualSacks        Float     @map("actual_sacks")
+  actualKgPerHa      Float?    @map("actual_kg_per_ha")
+  operatorName       String?   @map("operator_name")
+  observations       String?
+  createdAt          DateTime  @default(now()) @map("created_at")
+
+  planApplication    PlanApplication? @relation(fields: [planApplicationId], references: [id])
+  lot                Lot              @relation(fields: [lotId], references: [id])
+  formula            Formula          @relation(fields: [formulaId], references: [id])
+
+  @@map("application_records")
+}
+
+// ── Yield Result (Resultado de Cosecha) ─────────────────────────────
+model YieldResult {
+  id              Int       @id @default(autoincrement())
+  lotId           Int       @map("lot_id")
+  harvestSeasonId Int       @map("harvest_season_id")
+  harvestDate     DateTime? @map("harvest_date")
+  actualTch       Float     @map("actual_tch")
+  totalTons       Float?    @map("total_tons")
+  targetTch       Float?    @map("target_tch")             // Denormalized for easy comparison
+  notes           String?
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  lot             Lot           @relation(fields: [lotId], references: [id])
+  harvestSeason   HarvestSeason @relation(fields: [harvestSeasonId], references: [id])
+
+  @@unique([lotId, harvestSeasonId])
+  @@map("yield_results")
+}
