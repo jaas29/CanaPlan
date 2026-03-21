@@ -49,7 +49,7 @@ export default async function ResultadosPage() {
                 <th className="px-4 py-3 text-right text-[10px] font-semibold uppercase tracking-wider text-[var(--color-on-surface-variant)]">Diferencia</th>
                 <th className="px-4 py-3 text-right text-[10px] font-semibold uppercase tracking-wider text-[var(--color-on-surface-variant)]">Tons Total</th>
                 <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-[var(--color-on-surface-variant)]">Fecha</th>
-                <th className="px-4 py-3 w-10"></th>
+                <th className="px-4 py-3 w-20"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--color-outline-variant)]/10">
@@ -84,7 +84,16 @@ export default async function ResultadosPage() {
                       {r.harvestDate ? new Date(r.harvestDate).toLocaleDateString("es-CR") : "-"}
                     </td>
                     <td className="px-4 py-3">
-                      <DeleteResultButton resultId={r.id} lotName={r.lot.displayName} />
+                      <div className="flex items-center gap-1">
+                        <Link
+                          href={`/resultados/${r.id}/editar`}
+                          className="rounded p-1 text-[var(--color-on-surface-variant)] hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                          title="Editar"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">edit</span>
+                        </Link>
+                        <DeleteResultButton resultId={r.id} lotName={r.lot.displayName} />
+                      </div>
                     </td>
                   </tr>
                 );

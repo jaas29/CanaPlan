@@ -17,13 +17,22 @@ export default async function LotesPage() {
         title="Lotes"
         description={`${lots.length} lotes registrados`}
         actions={
-          <Link
-            href="/lotes/nuevo"
-            className="inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[var(--color-primary-container)] transition-colors"
-          >
-            <span className="material-symbols-outlined text-[18px]">add</span>
-            Nuevo Lote
-          </Link>
+          <div className="flex gap-2">
+            <Link
+              href="/lotes/importar"
+              className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-[var(--color-primary)] hover:bg-emerald-50 transition-colors"
+            >
+              <span className="material-symbols-outlined text-[18px]">upload_file</span>
+              Importar Excel
+            </Link>
+            <Link
+              href="/lotes/nuevo"
+              className="inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[var(--color-primary-container)] transition-colors"
+            >
+              <span className="material-symbols-outlined text-[18px]">add</span>
+              Nuevo Lote
+            </Link>
+          </div>
         }
       />
 

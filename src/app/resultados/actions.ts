@@ -53,6 +53,35 @@ export async function createYieldResult(formData: FormData) {
   redirect("/resultados");
 }
 
+export async function updateYieldResult(formData: FormData) {
+  const resultId = Number(formData.get("resultId"));
+  const actualTch = Number(formData.get("actualTch"));
+  const harvestDate = formData.get("harvestDate") as string | null;
+  const notes = (formData.get("notes") as string)?.trim() || null;
+
+  if (!resultId || !actualTch || actualTch <= 0) {
+    throw new Error("TCH real es requerido");
+  }
+
+  const result = await prisma.yieldResult.findUniqueOrThrow({
+    where: { id: resultId },
+  });
+  const lot = await prisma.lot.findUniqueOrThrow({ where: { id: result.lotId } });
+  const totalTons = actualTch * lot.areaHa;
+
+  await prisma.yieldResult.update({
+    where: { id: resultId },
+    data: {
+      actualTch,
+      totalTons,
+      harvestDate: harvestDate ? new Date(harvestDate) : null,
+      notes,
+    },
+  });
+
+  redirect("/resultados");
+}
+
 export async function deleteYieldResult(formData: FormData) {
   const resultId = Number(formData.get("resultId"));
   if (!resultId) throw new Error("Result ID requerido");

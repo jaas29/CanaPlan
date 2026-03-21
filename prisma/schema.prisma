@@ -40,6 +40,7 @@ model Formula {
   mgoPct         Float   @default(0) @map("mgo_pct")
   caoPct         Float   @default(0) @map("cao_pct")
   kgPerSack      Float   @default(50) @map("kg_per_sack")
+  costPerSack    Float?  @map("cost_per_sack")
   nitrogenSource String? @map("nitrogen_source")
   isActive       Boolean @default(true) @map("is_active")
   createdAt      DateTime @default(now()) @map("created_at")

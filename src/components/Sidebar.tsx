@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: "/aplicaciones", label: "Aplicaciones",  icon: "agriculture" },
   { href: "/planes/comparar", label: "Plan vs Real", icon: "compare_arrows" },
   { href: "/resultados",   label: "Resultados",    icon: "trending_up" },
+  { href: "/simulador",    label: "Simulador",     icon: "tune" },
   { href: "/formulas",     label: "Formulas",      icon: "science" },
   { href: "/reportes",     label: "Reportes",      icon: "bar_chart" },
 ] as const;

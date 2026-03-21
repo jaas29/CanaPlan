@@ -30,6 +30,14 @@ export default async function PlanDetailPage({
 
   if (!plan) notFound();
 
+  // Calculate total estimated cost
+  const totalEstimatedCost = plan.applications.reduce((sum, app) => {
+    if (app.formula.costPerSack) {
+      return sum + app.totalSacks * app.formula.costPerSack;
+    }
+    return sum;
+  }, 0);
+
   const STATUS_COLORS: Record<string, string> = {
     borrador: "bg-slate-100 text-slate-700",
     aprobado: "bg-blue-50 text-blue-700",
@@ -71,12 +79,15 @@ export default async function PlanDetailPage({
       />
 
       {/* Plan summary */}
-      <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         {[
           { label: "TCH Meta", value: plan.targetTch },
           { label: "N Requerido", value: `${plan.nRequiredKg?.toFixed(1) ?? "---"} kg` },
           { label: "Estado", value: plan.status, badge: true },
           { label: "Area", value: `${plan.lot.areaHa} ha` },
+          ...(totalEstimatedCost > 0
+            ? [{ label: "Costo Est.", value: `${totalEstimatedCost.toLocaleString("es-CR")} CRC` }]
+            : []),
         ].map((stat) => (
           <div
             key={stat.label}
@@ -114,6 +125,9 @@ export default async function PlanDetailPage({
                   </h3>
                   <p className="text-sm text-[var(--color-on-surface-variant)]">
                     {app.formula.name} &middot; {app.sacksPerHa} sacos/ha &middot; {app.totalSacks.toFixed(0)} sacos total
+                    {app.formula.costPerSack != null && (
+                      <span> &middot; {(app.totalSacks * app.formula.costPerSack).toLocaleString("es-CR")} CRC</span>
+                    )}
                   </p>
                   {app.plannedDate && (
                     <p className="text-xs text-[var(--color-on-surface-variant)]">
