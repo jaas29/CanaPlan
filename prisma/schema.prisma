@@ -4,7 +4,22 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
+}
+
+// ── Variety (Variedad) ───────────────────────────────────────────────
+model Variety {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique                            // URL-safe key, e.g. "b-80-408"
+  displayName String   @map("display_name")               // Human-readable, e.g. "B 80-408"
+  notes       String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  lots Lot[]
+
+  @@map("varieties")
 }
 
 // ── Lot (Lote) ──────────────────────────────────────────────────────
@@ -13,18 +28,21 @@ model Lot {
   code              String   @unique                       // URL-safe key, e.g. "nicolas-garcia"
   displayName       String   @map("display_name")          // Human-readable, e.g. "Nicolas Garcia"
   farmGroup         String?  @map("farm_group")            // Grouping label, e.g. "ARAZAM"
-  variety           String?                                 // Sugarcane variety
+  variety           String?                                 // Legacy free-text variety (kept for migration)
+  varietyId         Int?     @map("variety_id")             // FK to Variety entity
   areaHa            Float    @map("area_ha")
   lifecycleStatus   String   @default("soca") @map("lifecycle_status") // planta | soca | barbecho
   harvestCycleCount Int      @default(0) @map("harvest_cycle_count")   // Number of cosechas
-  soilReferenceZone String?  @map("soil_reference_zone")   // Company soil zone used as proxy
+  soilReferenceZone String?  @map("soil_reference_zone")   // Legacy text field
   notes             String?
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
 
+  varietyRel         Variety?  @relation(fields: [varietyId], references: [id])
   plans              FertilizationPlan[]
   applicationRecords ApplicationRecord[]
   yieldResults       YieldResult[]
+  soilReferences     LotSoilReference[]
 
   @@map("lots")
 }
@@ -153,4 +171,48 @@ model YieldResult {
 
   @@unique([lotId, harvestSeasonId])
   @@map("yield_results")
+}
+
+// ── Soil Reference Analysis (Analisis de Suelo de Referencia) ────────
+model SoilReferenceAnalysis {
+  id               Int       @id @default(autoincrement())
+  sourceType       String    @default("ingenio") @map("source_type")  // "ingenio" | "externo"
+  sourceName       String    @map("source_name")                      // e.g. "Ingenio Cutris"
+  sourceLotCode    String?   @map("source_lot_code")                  // e.g. "F40L8A"
+  analysisDate     DateTime? @map("analysis_date")
+  year             Int?
+  ph               Float?
+  organicMatterPct Float?    @map("organic_matter_pct")               // %
+  phosphorus       Float?                                              // mg/L
+  potassium        Float?                                              // cmol(+)/L
+  calcium          Float?                                              // cmol(+)/L
+  magnesium        Float?                                              // cmol(+)/L
+  acidity          Float?                                              // cmol(+)/L
+  iron             Float?                                              // mg/L
+  copper           Float?                                              // mg/L
+  zinc             Float?                                              // mg/L
+  manganese        Float?                                              // mg/L
+  notes            String?
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  lotReferences LotSoilReference[]
+
+  @@map("soil_reference_analyses")
+}
+
+// ── Lot-Soil Reference Link ─────────────────────────────────────────
+model LotSoilReference {
+  id                      Int      @id @default(autoincrement())
+  lotId                   Int      @map("lot_id")
+  soilReferenceAnalysisId Int      @map("soil_ref_id")
+  mappingNote             String?  @map("mapping_note")       // e.g. "Suelos similares, misma zona"
+  isPrimary               Boolean  @default(false) @map("is_primary")
+  createdAt               DateTime @default(now()) @map("created_at")
+
+  lot                   Lot                    @relation(fields: [lotId], references: [id])
+  soilReferenceAnalysis SoilReferenceAnalysis  @relation(fields: [soilReferenceAnalysisId], references: [id], onDelete: Cascade)
+
+  @@unique([lotId, soilReferenceAnalysisId])
+  @@map("lot_soil_references")
 }

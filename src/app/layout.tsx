@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Sidebar from "@/components/Sidebar";
 
 export const metadata: Metadata = {
   title: "CanaPlan - Gestion de Fertilizacion",
@@ -25,12 +24,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full bg-[var(--color-surface)]">
-        <Sidebar />
-        <main className="ml-60 min-h-screen">
-          <div className="mx-auto max-w-7xl px-6 py-8">
-            {children}
-          </div>
-        </main>
+        {children}
       </body>
     </html>
   );
